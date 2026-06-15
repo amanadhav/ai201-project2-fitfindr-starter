@@ -12,5 +12,9 @@ env/
 # Jupyter
 .ipynb_checkpoints/
 
+# FitFindr runtime artifact (style profile memory) — regenerated per user
+data/style_profile.json
+data/style_profile.json.tmp
+
 # macOS
 .DS_Store
