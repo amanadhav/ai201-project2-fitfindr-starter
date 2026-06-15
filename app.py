@@ -43,8 +43,44 @@ def handle_query(user_query: str, wardrobe_choice: str) -> tuple[str, str, str]:
            string and return it along with session["outfit_suggestion"] and
            session["fit_card"].
     """
-    # TODO: implement this function
-    return "Agent not yet implemented.", "", ""
+    # 1. Guard against an empty query.
+    if not user_query or not user_query.strip():
+        return "Please enter what you're looking for (e.g. 'vintage graphic tee under $30').", "", ""
+
+    # 2. Select the wardrobe based on the radio choice.
+    if wardrobe_choice == "Empty wardrobe (new user)":
+        wardrobe = get_empty_wardrobe()
+    else:
+        wardrobe = get_example_wardrobe()
+
+    # 3. Run the agent — one query, state flows internally between tools.
+    session = run_agent(user_query.strip(), wardrobe)
+
+    # 4. Error path: show the message in the first panel, leave the rest empty.
+    if session["error"]:
+        return f"⚠️ {session['error']}", "", ""
+
+    # 5. Happy path: format the selected listing and return all three panels.
+    item = session["selected_item"]
+    brand = item.get("brand") or "—"
+    listing_text = (
+        f"{item['title']}\n"
+        f"${item['price']:.2f} · {item['platform']}\n"
+        f"Condition: {item['condition']} · Size: {item['size']}\n"
+        f"Brand: {brand}\n"
+        f"Style: {', '.join(item.get('style_tags', []))}\n\n"
+        f"{item['description']}"
+    )
+
+    # Stretch: surface retry adjustments, price fairness, and trends.
+    if session.get("adjustments"):
+        listing_text += "\n\n🔁 " + " ".join(session["adjustments"])
+    if session.get("price_check"):
+        listing_text += f"\n\n💰 {session['price_check']['message']}"
+    if session.get("trending"):
+        listing_text += f"\n\n📈 {session['trending']['message']}"
+
+    return listing_text, session["outfit_suggestion"], session["fit_card"]
 
 
 # ── interface ─────────────────────────────────────────────────────────────────
